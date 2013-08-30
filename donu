@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+#encoding=UTF-8
+
+import sys
+from subprocess import call
+
+#TODO: Load lists and options from a dotfile instead
+#TODO: Detection and multiple program lists for URLs, local files, pictures, etc
+#TODO: Explicit configuration option
+#TODO: Paging and support for more than 10 items.
+browsers = [
+    ["firefox"],
+    ["w3m"],
+    ["midori", "--private"],
+    ["arora"]
+]
+page = 0
+
+if len(sys.argv)<2: sys.exit("Usage:\n donu <URL or file>")
+
+def drawscreen():
+    print "Giving this:\n"
+    print sys.argv[1]+"\n"
+    print "To:\n"
+    for i in range(0,len(browsers)):
+        entry = ''
+        for j in range(0,len(browsers[i])):
+            entry += str(browsers[i][j]+" ")
+        if i==0:
+            entry += " (Default)"
+        print str(i+1)+": "+ entry
+    #if (len(browsers)>10): 
+    #    print "p or n for more options"
+    print "Or c to cancel"
+
+
+while True:
+    drawscreen()
+
+    theinput = raw_input('? ').lower()
+
+    if theinput == '':
+        theinput = 1
+    if theinput == 'e':
+        print "Editing NYI"
+    if theinput == 'c':
+        print "Configuration NYI"
+    if theinput == 'q':
+        sys.exit()
+    #if theinput == 'n' and len(browsers) > page * 10:
+    #    page += 1
+    #    continue
+    #if theinput == 'p' and page > 0:
+    #    page -= 1
+    #    continue
+    if theinput == 'r':
+        sys.argv[1]+= "/.compact"
+        continue
+
+    try:
+        call(browsers[int(theinput)-1]+[sys.argv[1]])
+        break
+    except (IndexError, ValueError):
+        print "Invalid selection"
