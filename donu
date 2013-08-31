@@ -31,7 +31,7 @@ def drawscreen():
         print str(i+1)+": "+ entry
     #if (len(browsers)>10): 
     #    print "p or n for more options"
-    print "Or c to cancel"
+    print "Or q to cancel"
 
 
 while True:
