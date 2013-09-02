@@ -1,22 +1,25 @@
 #!/usr/bin/env python
 #encoding=UTF-8
 
+import os
 import sys
 from subprocess import call
+from configobj import ConfigObj
 
-#TODO: Load lists and options from a dotfile instead
-#TODO: Detection and multiple program lists for URLs, local files, pictures, etc
-#TODO: Explicit configuration option
-#TODO: Paging and support for more than 10 items.
-browsers = [
-    ["firefox"],
-    ["w3m"],
-    ["midori", "--private"],
-    ["arora"]
-]
-page = 0
-
+#TODO: Paging and such
 if len(sys.argv)<2: sys.exit("Usage:\n donu <URL or file>")
+
+confpath = os.getenv("HOME") + "/.donu.conf"
+config = ConfigObj(confpath)
+page = 0
+browsers = []
+protocol = sys.argv[1][:sys.argv[1].find(":")]
+
+try:
+    for program in config[protocol]:
+        browsers += [str(config[protocol][program])]
+except KeyError:
+    sys.exit("Key Error when reading " + protocol + " from " + confpath)
 
 def drawscreen():
     print "Giving this:\n"
@@ -24,8 +27,7 @@ def drawscreen():
     print "To:\n"
     for i in range(0,len(browsers)):
         entry = ''
-        for j in range(0,len(browsers[i])):
-            entry += str(browsers[i][j]+" ")
+        entry += str(browsers[i])
         if i==0:
             entry += " (Default)"
         print str(i+1)+": "+ entry
@@ -33,18 +35,26 @@ def drawscreen():
     #    print "p or n for more options"
     print "Or q to cancel"
 
+def pass_uri(selection=1):
+    call((browsers[int(selection)-1] + " " + sys.argv[1]).split())
+    sys.exit()
 
 while True:
+    if len(browsers) == 1:
+        pass_uri()
+        break
     drawscreen()
 
     theinput = raw_input('? ').lower()
 
     if theinput == '':
-        theinput = 1
+        theinput = '1'
     if theinput == 'e':
         print "Editing NYI"
+        continue
     if theinput == 'c':
         print "Configuration NYI"
+        continue
     if theinput == 'q':
         sys.exit()
     #if theinput == 'n' and len(browsers) > page * 10:
@@ -58,7 +68,7 @@ while True:
         continue
 
     try:
-        call(browsers[int(theinput)-1]+[sys.argv[1]])
+        pass_uri(theinput)
         break
     except (IndexError, ValueError):
-        print "Invalid selection"
+        print "Invalid selection\n"

@@ -1,0 +1,26 @@
+#Place this file in your home folder as ~/.donu.conf
+#Sections are matched to the URI header
+#Given URIs are appended after the commands given
+#Sections with only 1 entry have matching URIs passed automatically
+
+[http]
+1_cmd = "firefox"
+2_cmd = "w3m"
+3_cmd = "wget -P ~/Downloads/"
+
+[https]
+1_cmd = "firefox"
+2_cmd = "w3m"
+3_cmd = "wget -P ~/Downloads/"
+
+[ftp]
+1_cmd = "firefox"
+
+[ssh]
+1_cmd = "ssh -XC"
+
+[steam]
+1_cmd = "steam"
+
+[file]
+1_cmd = "thunar"
