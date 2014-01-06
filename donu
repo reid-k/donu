@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #encoding=UTF-8
 
 import os
@@ -22,18 +22,18 @@ except KeyError:
     sys.exit("Key Error when reading " + protocol + " from " + confpath)
 
 def drawscreen():
-    print "Giving this:\n"
-    print sys.argv[1]+"\n"
-    print "To:\n"
+    print("Giving this:\n")
+    print(sys.argv[1]+"\n")
+    print("To:\n")
     for i in range(0,len(browsers)):
         entry = ''
         entry += str(browsers[i])
         if i==0:
             entry += " (Default)"
-        print str(i+1)+": "+ entry
+        print(str(i+1)+": "+ entry)
     #if (len(browsers)>10): 
     #    print "p or n for more options"
-    print "Or q to cancel"
+    print("Or q to cancel")
 
 def pass_uri(selection=1):
     call((browsers[int(selection)-1] + " " + sys.argv[1]).split())
@@ -50,10 +50,10 @@ while True:
     if theinput == '':
         theinput = '1'
     if theinput == 'e':
-        print "Editing NYI"
+        print("Editing NYI")
         continue
     if theinput == 'c':
-        print "Configuration NYI"
+        print("Configuration NYI")
         continue
     if theinput == 'q':
         sys.exit()
@@ -71,4 +71,4 @@ while True:
         pass_uri(theinput)
         break
     except (IndexError, ValueError):
-        print "Invalid selection\n"
+        print("Invalid selection\n")
