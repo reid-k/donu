@@ -4,22 +4,49 @@
 import os
 import sys
 from subprocess import call
+from clint.textui.colored import ColoredString 
 from configobj import ConfigObj
+from urlparse import urlparse
 
-#TODO: Paging and such
 if len(sys.argv)<2: sys.exit("Usage:\n donu <URL or file>")
 
 confpath = os.getenv("HOME") + "/.donu.conf"
 config = ConfigObj(confpath)
 page = 0
 browsers = []
-protocol = sys.argv[1][:sys.argv[1].find(":")]
+indicators = []
+DEBUG = config['donu']['DEBUG']
+COLOR = config['donu']['COLOR']
+
+parsed_url = urlparse(sys.argv[1])
+
+protocol = parsed_url.scheme
+if protocol == "": protocol = "file"
+
+extension = parsed_url.path[parsed_url.path.rfind('.')+1:]
+if extension == parsed_url.path: extension = ""
 
 try:
     for program in config[protocol]:
-        browsers += [str(config[protocol][program])]
+        if str(config[protocol][program])[0] != "{":
+            browsers += [str(config[protocol][program])]
+            indicators += ["RESET"]
+    try:
+        for netloc_prog in config[protocol]["loc:"+parsed_url.netloc]:
+            browsers += [str(config[protocol]["loc:"+parsed_url.netloc][netloc_prog])]
+            indicators += ["RED"]
+    except:
+        if DEBUG: print("No subsection found for " + parsed_url.netloc)
+    try:
+        for type_prog in config[protocol]["type:"+extension]:
+            browsers += [str(config[protocol]["type:"+extension][type_prog])]
+            indicators += ["GREEN"]
+    except:
+        if DEBUG: print("No subsection found for type " + extension)
 except KeyError:
     sys.exit("Key Error when reading " + protocol + " from " + confpath)
+except:
+    sys.exit("Error reading " + protocol + " from " + confpath)
 
 def drawscreen():
     print("Giving this:\n")
@@ -30,13 +57,15 @@ def drawscreen():
         entry += str(browsers[i])
         if i==0:
             entry += " (Default)"
-        print(str(i+1)+": "+ entry)
+        if COLOR: print(str(i+1)+ColoredString(indicators[i],"> ")+ entry)
+        else: print(str(i+1)+"> "+ entry)
     #if (len(browsers)>10): 
-    #    print "p or n for more options"
+    #    print("p or n for more options")
     print("Or q to cancel")
 
 def pass_uri(selection=1):
     call((browsers[int(selection)-1] + " " + sys.argv[1]).split())
+    print("\n")
     sys.exit()
 
 while True:

@@ -2,16 +2,29 @@
 #Sections are matched to the URI header
 #Given URIs are appended after the commands given
 #Sections with only 1 entry have matching URIs passed automatically
+#Subsections are supported for specific locations and file types, shown below
+
+#The donu section is special, controlling True/False variables in donu itself
+#Please don't try to make donu://whatever URIs.
+[donu]
+DEBUG = False
+COLOR = True
 
 [http]
 1_cmd = "firefox"
 2_cmd = "w3m"
 3_cmd = "wget -P ~/Downloads/"
+    [[loc:www.youtube.com]]
+    1_cmd = "youtube-dl -t"
+    [[type:]]
+    1_cmd = "vim"
+    [[type:mp3]]
+    1_cmd = "wget -P /home/user/Music/"
 
 [https]
 1_cmd = "firefox"
 2_cmd = "w3m"
-3_cmd = "wget -P ~/Downloads/"
+3_cmd = "wget -P /home/user/Downloads/"
 
 [ftp]
 1_cmd = "firefox"
@@ -24,3 +37,7 @@
 
 [file]
 1_cmd = "thunar"
+    [[type:]]
+    1_cmd = "vim"
+    [[type:html]]
+    1_cmd = "firefox"
