@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Improved setup script
+
+# Make sure only root can run our script
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 1>&2
+   exit 1
+fi
+
+INSTALLDIR="/usr/local/bin"
+
+SCRIPTLOCATION=$(readlink -f $0)
+LOCATION=$(dirname $SCRIPTLOCATION)
+
+for SCRIPT in $LOCATION/*
+do
+    FILENAME="${SCRIPT##*/}"
+    rm -r $INSTALLDIR/$FILENAME
+    ln -s $SCRIPT $INSTALLDIR/$FILENAME
+done
