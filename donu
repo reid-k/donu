@@ -1,10 +1,26 @@
 #!/usr/bin/env python2
 #encoding=UTF-8
 
+# (C) 2014 Reid Kleiner <reid.a.kleiner@gmail.com> 
+# and kevinisageek <kevinisageek.org>
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import sys
 from subprocess import call
-from clint.textui.colored import ColoredString 
+from clint.textui.colored import ColoredString
 from configobj import ConfigObj
 from urlparse import urlparse
 
@@ -22,24 +38,51 @@ parsed_url = urlparse(sys.argv[1])
 
 protocol = parsed_url.scheme
 if protocol == "": protocol = "file"
+netloc = parsed_url.netloc
 
 extension = parsed_url.path[parsed_url.path.rfind('.')+1:]
 if extension == parsed_url.path: extension = ""
 
 try:
+    ### SCHEME ###
+    defined_protocols = []
+    for scheme in config: defined_protocols += [scheme]
+    if DEBUG: print("Defined schemes: "+str(defined_protocols))
+    while len(config[protocol])==0:
+        protocol = defined_protocols[1+defined_protocols.index(protocol)]
     for program in config[protocol]:
         if str(config[protocol][program])[0] != "{":
             browsers += [str(config[protocol][program])]
             indicators += ["RESET"]
+    ### LOCATION ###
+    netloc = "loc:"+netloc
+    defined_locations = []
+    for loc in config[protocol]:
+        if loc.find("loc:")==0:
+            defined_locations += [loc]
+    if DEBUG: print("Defined locations: "+str(defined_locations))
+    if netloc in defined_locations:
+        while len(config[protocol][netloc])==0:
+            netloc = defined_locations[1+defined_locations.index(netloc)]
     try:
-        for netloc_prog in config[protocol]["loc:"+parsed_url.netloc]:
-            browsers += [str(config[protocol]["loc:"+parsed_url.netloc][netloc_prog])]
+        for netloc_prog in config[protocol][netloc]:
+            browsers += [str(config[protocol][netloc][netloc_prog])]
             indicators += ["RED"]
     except:
-        if DEBUG: print("No subsection found for " + parsed_url.netloc)
+        if DEBUG: print("No subsection found for " + netloc)
+    ### EXTENSION ###
+    extension = "type:"+extension
+    defined_types = []
+    for filetype in config[protocol]:
+        if filetype.find("type:")==0:
+            defined_types += [filetype]
+    if DEBUG: print("Defined filetypes: "+str(defined_types))
+    if extension in defined_types:
+        while len(config[protocol][extension])==0:
+            extension = defined_types[1+defined_types.index(extension)]
     try:
-        for type_prog in config[protocol]["type:"+extension]:
-            browsers += [str(config[protocol]["type:"+extension][type_prog])]
+        for type_prog in config[protocol][extension]:
+            browsers += [str(config[protocol][extension][type_prog])]
             indicators += ["GREEN"]
     except:
         if DEBUG: print("No subsection found for type " + extension)
@@ -59,7 +102,7 @@ def drawscreen():
             entry += " (Default)"
         if COLOR: print(str(i+1)+ColoredString(indicators[i],"> ")+ entry)
         else: print(str(i+1)+"> "+ entry)
-    #if (len(browsers)>10): 
+    #if (len(browsers)>10):
     #    print("p or n for more options")
     print("Or q to cancel")
 
