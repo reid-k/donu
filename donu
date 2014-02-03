@@ -17,34 +17,77 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+
+### Imports ###
 import os
 import sys
 from subprocess import call
-from clint.textui.colored import ColoredString
+import colorama
 from configobj import ConfigObj
 from urlparse import urlparse
 
-if len(sys.argv)<2: sys.exit("Usage:\n donu <URL or file>")
+### Catch -h, --help, or too many/few arguments, print help, and exit. ###
+help_short = "Usage:\n donu <URL or file>"
+help_long = """Donu URI handler
 
-confpath = os.getenv("HOME") + "/.donu.conf"
+Usage:
+    donu <URL or file>
+
+Displays a menu of programs listed for the scheme/location/extension of the given URI, as defined by your ~/.donu.conf file. See the included README file for detailed help.
+
+More information can be found at the project page:
+    http://github.com/reid-k/donu
+"""
+if not len(sys.argv) == 2:
+    sys.exit(help_short)
+if sys.argv[1]=="-h" or sys.argv[1]=="--help":
+    sys.exit(help_long)
+
+### Set up color ###
+colorama.init(autoreset=True)
+reset = colorama.Fore.RESET + colorama.Back.RESET + colorama.Style.RESET_ALL
+
+### Set up the rest of what we need ###
+workdir = os.getenv("HOME") + "/.config/donu/"
+confpath = workdir + "donu.conf"
 config = ConfigObj(confpath)
 page = 0
 browsers = []
 indicators = []
-DEBUG = config['donu']['DEBUG']
-COLOR = config['donu']['COLOR']
 
+# Try to load settings that affect program behavior from the configuration
+# If not, default to false
+def getflag(a,b=False): # Usage: getflag(flag name, value to return on failure)
+    try:
+        o = config['donu'][a]
+        if o.lower() == "true": o = True
+        elif o.lower() == "false": o = False
+    except:
+        o = b
+    return o
+
+DEBUG = getflag('DEBUG')
+COLOR = getflag('COLOR')
+EDITOR = getflag('EDITOR',"vim")
+
+# If debug flag is on, print the processed flags
+if DEBUG: print("Debug is: " + str(DEBUG))
+if DEBUG: print("Color is: " + str(COLOR))
+if DEBUG: print("Editor is: " + str(EDITOR))
+
+# Chop up the URI and process the configuration for the appropriate handlers
+# TODO: Break this up into a function that takes a config and URI
+# TODO: And returns two lists - handlers and indicator colors
 parsed_url = urlparse(sys.argv[1])
-
 protocol = parsed_url.scheme
 if protocol == "": protocol = "file"
 netloc = parsed_url.netloc
-
 extension = parsed_url.path[parsed_url.path.rfind('.')+1:]
 if extension == parsed_url.path: extension = ""
 
 try:
-    ### SCHEME ###
+    # First, the scheme's handlers
     defined_protocols = []
     for scheme in config: defined_protocols += [scheme]
     if DEBUG: print("Defined schemes: "+str(defined_protocols))
@@ -53,8 +96,8 @@ try:
     for program in config[protocol]:
         if str(config[protocol][program])[0] != "{":
             browsers += [str(config[protocol][program])]
-            indicators += ["RESET"]
-    ### LOCATION ###
+            indicators += [colorama.Fore.WHITE]
+    # Then the location-specific handlers
     netloc = "loc:"+netloc
     defined_locations = []
     for loc in config[protocol]:
@@ -67,10 +110,10 @@ try:
     try:
         for netloc_prog in config[protocol][netloc]:
             browsers += [str(config[protocol][netloc][netloc_prog])]
-            indicators += ["RED"]
+            indicators += [colorama.Fore.RED]
     except:
         if DEBUG: print("No subsection found for " + netloc)
-    ### EXTENSION ###
+    # Finally, the extension-specific handlers
     extension = "type:"+extension
     defined_types = []
     for filetype in config[protocol]:
@@ -83,7 +126,7 @@ try:
     try:
         for type_prog in config[protocol][extension]:
             browsers += [str(config[protocol][extension][type_prog])]
-            indicators += ["GREEN"]
+            indicators += [colorama.Fore.GREEN]
     except:
         if DEBUG: print("No subsection found for type " + extension)
 except KeyError:
@@ -100,17 +143,47 @@ def drawscreen():
         entry += str(browsers[i])
         if i==0:
             entry += " (Default)"
-        if COLOR: print(str(i+1)+ColoredString(indicators[i],"> ")+ entry)
-        else: print(str(i+1)+"> "+ entry)
+        print(
+                (COLOR * indicators[i]) +
+                ((i<9 and len(browsers)>9)*"0") + str(i+1) + "> " +
+                (COLOR * reset) +
+                entry
+                )
     #if (len(browsers)>10):
     #    print("p or n for more options")
-    print("Or q to cancel")
+    print("Other options:\nC: open donu.conf E: Edit URI O:Other command Q:quit")
+
+def tmp2editor(filecontent="",filename=("donu-tmp-"+str(os.getpid())),ed=EDITOR):
+    try:
+        f = open(workdir+filename,'w')
+        f.write(filecontent)
+        f.close()
+    except:
+        print("Failed to open "+workdir+filename)
+        return False
+    call((ed + " " + workdir + filename).split())
+    try:
+        f = open(workdir+filename,'r')
+        o = f.read()
+        f.close()
+    except:
+        print("Failed to reopen "+workdir+filename)
+        return False
+    try:
+        os.remove(workdir+filename)
+    except:
+        print("Failed to delete "+workdir+filename)
+        return False
+    return o
 
 def pass_uri(selection=1):
     call((browsers[int(selection)-1] + " " + sys.argv[1]).split())
     print("\n")
     sys.exit()
 
+
+
+### Put it all together ###
 while True:
     if len(browsers) == 1:
         pass_uri()
@@ -122,11 +195,24 @@ while True:
     if theinput == '':
         theinput = '1'
     if theinput == 'e':
-        print("Editing NYI")
-        continue
+        edited_uri = tmp2editor(sys.argv[1])
+        if edited_uri != False:
+            call(("donu "+ edited_uri).split())
+            break
+        else:
+            print("URI editing failed, work with what you have.")
+            continue
     if theinput == 'c':
-        print("Configuration NYI")
-        continue
+        call((EDITOR + " " + confpath).split())
+        call(("donu "+ sys.argv[1]).split())
+        break
+    if theinput == 'o':
+        otherhandler = raw_input('Enter other handler: ')
+        if otherhandler == '':
+            continue
+        else:
+            call((otherhandler + " " + sys.argv[1]).split())
+            sys.exit()
     if theinput == 'q':
         sys.exit()
     #if theinput == 'n' and len(browsers) > page * 10:
