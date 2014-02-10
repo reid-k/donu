@@ -9,6 +9,8 @@
 [donu]
 DEBUG = False
 COLOR = True
+EDITOR = vim
+LOG = True
 
 [http]
 1_cmd = "firefox"

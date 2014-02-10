@@ -1,6 +1,12 @@
 changelog
 =========
 
+2014-02-10:
+
+* Added configuration option `LOG`, which causes donu to keep timestamped records of URIs and the programs they were given to.
+    * Defaults to `False`.
+    * Logs are stored in `~/.config/donu/logs/` as `YYYY-MM-DD.log`
+
 2014-02-03:
 
 * **IMPORTANT**: moved config file from `~/.donu.conf` to `~/.config/donu/donu.conf`
