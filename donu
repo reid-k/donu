@@ -25,6 +25,7 @@ import sys
 from subprocess import call
 import colorama
 from configobj import ConfigObj
+from time import strftime
 from urlparse import urlparse
 
 ### Catch -h, --help, or too many/few arguments, print help, and exit. ###
@@ -70,11 +71,13 @@ def getflag(a,b=False): # Usage: getflag(flag name, value to return on failure)
 DEBUG = getflag('DEBUG')
 COLOR = getflag('COLOR')
 EDITOR = getflag('EDITOR',"vim")
+LOG = getflag('LOG')
 
 # If debug flag is on, print the processed flags
 if DEBUG: print("Debug is: " + str(DEBUG))
 if DEBUG: print("Color is: " + str(COLOR))
 if DEBUG: print("Editor is: " + str(EDITOR))
+if DEBUG: print("Logging is: " + str(LOG))
 
 # Chop up the URI and process the configuration for the appropriate handlers
 # TODO: Break this up into a function that takes a config and URI
@@ -177,6 +180,12 @@ def tmp2editor(filecontent="",filename=("donu-tmp-"+str(os.getpid())),ed=EDITOR)
     return o
 
 def pass_uri(selection=1):
+    if LOG:
+        log = open(workdir + "/logs/" + strftime("%Y-%m-%d.log"),"a")
+        log.write(
+                strftime("%Y-%m-%dT%H:%M:%S%Z") + "   " + browsers[int(selection)-1] +
+                "   " + sys.argv[1] + "\n"
+                )
     call((browsers[int(selection)-1] + " " + sys.argv[1]).split())
     print("\n")
     sys.exit()
